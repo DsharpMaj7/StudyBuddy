@@ -1,5 +1,7 @@
 "use server";
 
+export const runtime = "nodejs";
+
 import { revalidatePath } from "next/cache";
 import { extractTextFromPdfBuffer } from "@/lib/extractPdfText";
 import { generateStudyPackWithGemini } from "@/lib/geminiGenerator";

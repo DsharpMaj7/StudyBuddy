@@ -1,22 +1,27 @@
 import "server-only";
 
 /**
- * PDF parsing runs only on the server. Dynamic import keeps `pdf-parse` (and pdfjs-dist)
- * out of webpack’s server-action client chunks, where it breaks at runtime.
+ * PDF parsing runs only on the server.
  */
 export async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
   try {
-    const result = await parser.getText();
-    const textContent = result.text?.trim() ?? "";
-    if (!textContent) {
-      throw new Error(
-        "Could not extract text from this PDF. It may be image-only (scanned) or protected."
-      );
+    console.log("PDF parse start, buffer length:", buffer.length);
+
+    const mod = await import("pdf-parse");
+    console.log("Imported pdf-parse module keys:", Object.keys(mod));
+
+    const pdfParse = (mod as any).default ?? mod;
+    const result = await pdfParse(buffer);
+
+    console.log("PDF parse result keys:", Object.keys(result || {}));
+
+    if (!result?.text?.trim()) {
+      throw new Error("No text extracted from PDF.");
     }
-    return textContent;
-  } finally {
-    await parser.destroy();
+
+    return result.text;
+  } catch (err) {
+    console.error("PDF parse failed:", err);
+    throw new Error("Could not extract text from this PDF. It may be image-only (scanned) or protected.");
   }
 }
